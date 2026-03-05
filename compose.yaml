@@ -9,6 +9,11 @@ services:
       - DATABASE_URL=${DATABASE_URL}
     depends_on:
       - db # Ensures the database starts before the API
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" # Caps the log file at 10 Megabytes
+        max-file: "3" # Keeps only the 3 most recent files
 
   db:
     image: postgres:15-alpine # A lightweight, official Postgres image
