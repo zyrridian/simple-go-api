@@ -11,11 +11,18 @@ import (
 	_ "github.com/lib/pq" // The PostgreSQL driver
 )
 
-// Response now includes a field to show data pulled from the DB
+// Response struct for our base route
 type Response struct {
 	Status string `json:"status"`
 	Message string `json:"message"`
 	DBTime string `json:"db_time,omitempty"`
+}
+
+// Item struct represents the data we want to save and return
+type Item struct {
+	ID int `json:"id"`
+	Name string `json:"name"`
+	Description string `json:"description"`
 }
 
 func main() {
@@ -37,11 +44,22 @@ func main() {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
 	log.Println("Successfully connected to PostgreSQL!")
+
+	// Create the table automatically if it doesn't exist
+	createTableQuery := `
+	CREATE TABLE IF NOT EXIST items (
+		id SERIAL PRIMARY KEY,
+		name VARCHAR(100) NOT NULL,
+		description TEXT
+	);`
+	if _, err := db.Exec(createTableQuery); err != nil {
+		log.Fatalf("Failed to create table: %v", err)
+	}
 	
 	// Using the standard ServeMux router
 	mux := http.NewServeMux()
 
-	// Base URL Route (Returns JSON)
+	// Base Route (GET)
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		// Query the database for the current time
 		var currentTime string
@@ -64,11 +82,36 @@ func main() {
 		json.NewEncoder(w).Encode(resp)
 	})
 
-	// Health Check Route (Returns plain text)
+	// Health Check Route (GET)
 	mux.HandleFunc("GET /ping", func(w http.ResponseWriter, r *http.Request){
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, "pong")
+	})
+
+	// Insert Data Route (POST)
+	mux.HandleFunc("POST /items", func(w http.ResponseWriter, r *http.Request)  {
+		var newItem Item
+		
+		// Decode the JSON body from the user into our Go struct
+		if err := json.NewDecoder(r.Body).Decode(&newItem); err != nil {
+			http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+			return
+		}
+
+		// Inser the data into PostgreSQL and grab the new auto-generated ID
+		insertQuery := `INSERT INTO items (name, description) VALUES ($1, $2) RETURNING id`
+		err := db.QueryRow(insertQuery, newItem.Name, newItem.Description).Scan(&newItem.ID)
+		if err != nil {
+			log.Printf("DB Insert Error: %v", err)
+			http.Error(w, "Failed to save data to database", http.StatusInternalServerError)
+			return
+		}
+
+		// Send the newly created item back to the user
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated) // Returns a 201 Created status code
+		json.NewEncoder(w).Encode(newItem)
 	})
 
 	// Start the server
