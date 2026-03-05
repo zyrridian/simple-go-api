@@ -7,8 +7,29 @@ on:
       - main
 
 jobs:
+  # --- JOB 1: CONTINUOUS INTEGRATION (TESTING) ---
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4 # This pulls your code into GitHub runner
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.26" # Matches your VPS Go version
+
+      - name: Download Dependencies
+        run: go mod tidy
+
+      - name: Run Tests
+        run: go test -v ./.. # Runs all test in your project
+
+  # --- JOB 2: CONTINUOUS DEPLOYMENT ---
   deploy:
     name: Deploy to Production
+    needs: test # CRITICAL: This tells GitHub to wait for the 'test' job to finish successfully
     runs-on: ubuntu-latest # GitHub spins up a temporary Linux runner
 
     steps:
