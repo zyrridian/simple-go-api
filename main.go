@@ -47,7 +47,7 @@ func main() {
 
 	// Create the table automatically if it doesn't exist
 	createTableQuery := `
-	CREATE TABLE IF NOT EXIST items (
+	CREATE TABLE IF NOT EXISTS items (
 		id SERIAL PRIMARY KEY,
 		name VARCHAR(100) NOT NULL,
 		description TEXT
