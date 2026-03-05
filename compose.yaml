@@ -6,7 +6,7 @@ services:
     restart: always # This tells Docker to keep it alive even if the VPS reboots
     environment:
       # This tells Go how to connect to the db service
-      - DATABASE_URL=postgres://vpsuser:supersecretpassword@db:5432/vpsdb?sslmode=disable
+      - DATABASE_URL=${DATABASE_URL}
     depends_on:
       - db # Ensures the database starts before the API
 
@@ -15,9 +15,9 @@ services:
     restart: always
     environment:
       # These set up the database credentials automatically
-      - POSTGRES_USER=vpsuser
-      - POSTGRES_PASSWORD=supersecretpassword
-      - POSTGRES_DB=vpsdb
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     volumes:
       - pgdata:/var/lib/postgresql/data # This saves your data so it isn't deleted on restart
 
