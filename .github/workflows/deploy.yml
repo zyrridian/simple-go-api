@@ -24,7 +24,7 @@ jobs:
         run: go mod tidy
 
       - name: Run Tests
-        run: go test -v ./.. # Runs all test in your project
+        run: go test -v ./... # Runs all test in your project
 
   # --- JOB 2: CONTINUOUS DEPLOYMENT ---
   deploy:
