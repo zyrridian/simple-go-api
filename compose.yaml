@@ -1,0 +1,6 @@
+services:
+  go-api:
+    build: .
+    ports:
+      - "8081:8081"
+    restart: always # This tells Docker to keep it alive even if the VPS reboots
